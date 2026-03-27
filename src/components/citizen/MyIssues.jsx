@@ -41,10 +41,7 @@ const MyIssues = () => {
   return (
     <div className="rounded-2xl border border-cyan-400/10 bg-[#09111f]/80 p-7 backdrop-blur-md">
       <div className="mb-6 flex items-center justify-between">
-        <h2
-          className="text-xl font-semibold text-[#e6f1ff]"
-          style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-        >
+        <h2 className="text-base font-semibold text-[#e6f1ff]">
           My Issues
         </h2>
         <button className="rounded-xl border border-cyan-400/20 bg-cyan-400/10 px-4 py-2 text-sm font-medium text-cyan-300 hover:bg-cyan-400/15">

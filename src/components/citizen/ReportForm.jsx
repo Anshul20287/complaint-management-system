@@ -46,10 +46,7 @@ const ReportForm = () => {
 
   return (
     <div className="mb-6 flex flex-col gap-3 rounded-2xl border border-cyan-400/10 bg-[#09111f]/80 p-7 shadow-[0_0_0_1px_rgba(25,230,210,0.02)] backdrop-blur-md">
-      <h2
-        className="mb-1 text-base font-semibold text-[#e6f1ff]"
-        style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-      >
+      <h2 className="mb-1 text-base font-semibold text-[#e6f1ff]">
         Report a New Issue
       </h2>
 

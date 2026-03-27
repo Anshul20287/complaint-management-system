@@ -13,10 +13,7 @@ const StatsBar = () => {
         <React.Fragment key={s.label}>
           <div className="flex flex-col gap-1">
             <span className="text-sm text-[#7c8aa5]">{s.label}</span>
-            <span
-              className={`text-3xl font-bold leading-none ${s.color}`}
-              style={{ fontFamily: "'Space Grotesk', sans-serif" }}
-            >
+            <span className={`text-3xl font-bold leading-none ${s.color}`}>
               {s.value}
             </span>
           </div>

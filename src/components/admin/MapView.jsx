@@ -1,16 +1,16 @@
-import React from "react";
+import React from 'react';
 
 const mapIssues = [
-  { id: "#4821", title: "Pothole on SV Road", area: "Andheri West", color: "bg-red-400", status: "Open" },
-  { id: "#4790", title: "Broken Streetlight", area: "Bandra East", color: "bg-amber-400", status: "In Progress" },
-  { id: "#4702", title: "Water Leakage Fixed", area: "Dadar", color: "bg-emerald-400", status: "Resolved" },
-  { id: "#4744", title: "Garbage Overflow", area: "Kurla", color: "bg-cyan-400", status: "Open" },
+  { id: '#4821', title: 'Pothole on SV Road', area: 'Andheri West', color: 'bg-red-400', status: 'Open' },
+  { id: '#4790', title: 'Broken Streetlight', area: 'Bandra East', color: 'bg-amber-400', status: 'In Progress' },
+  { id: '#4702', title: 'Water Leakage Fixed', area: 'Dadar', color: 'bg-emerald-400', status: 'Resolved' },
+  { id: '#4744', title: 'Garbage Overflow', area: 'Kurla', color: 'bg-cyan-400', status: 'Open' },
 ];
 
 const statusStyles = {
-  Open: "text-red-400",
-  Resolved: "text-emerald-300",
-  "In Progress": "text-amber-300",
+  Open: 'text-red-400',
+  Resolved: 'text-emerald-300',
+  'In Progress': 'text-amber-300',
 };
 
 const MapView = () => {
