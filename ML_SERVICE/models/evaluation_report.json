@@ -1,0 +1,81 @@
+{
+  "best_model": "LateFusion(GBM_text + RF_image + LR_meta)",
+  "test_accuracy": 1.0,
+  "test_f1_macro": 1.0,
+  "test_f1_weighted": 1.0,
+  "text_only_accuracy": 0.9958,
+  "image_only_accuracy": 0.8917,
+  "classification_report": {
+    "low": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 60.0
+    },
+    "medium": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 60.0
+    },
+    "high": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 60.0
+    },
+    "critical": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 60.0
+    },
+    "accuracy": 1.0,
+    "macro avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 240.0
+    },
+    "weighted avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 240.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      60,
+      0,
+      0,
+      0
+    ],
+    [
+      0,
+      60,
+      0,
+      0
+    ],
+    [
+      0,
+      0,
+      60,
+      0
+    ],
+    [
+      0,
+      0,
+      0,
+      60
+    ]
+  ],
+  "feature_dim": {
+    "text": 133,
+    "image": 8,
+    "meta_input": 9
+  },
+  "train_size": 720,
+  "fusion_size": 240,
+  "test_size": 240
+}
