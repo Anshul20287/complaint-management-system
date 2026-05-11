@@ -10,6 +10,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
+from image_features import IMAGE_FEATURE_NAMES
+
 
 LABEL_NAMES = ["low", "medium", "high", "critical"]
 SEVERITY_COLORS = {
@@ -129,25 +131,22 @@ def generate_evaluation_report(results: dict, output_path: str = "models/evaluat
 
 
 def feature_importance_report(clf) -> dict:
-    """Extract feature importance from Random Forest if available."""
-    model = clf.best_model
-    if not hasattr(model, "feature_importances_"):
+    """Extract feature importance from RandomForest image branch if available."""
+    model = getattr(clf, "image_branch", None)
+    if model is None:
+        return {}
+    rf = getattr(model, "classifier", None)
+    if rf is None or not hasattr(rf, "feature_importances_"):
+        print("Feature importance not available for this model type.")
         return {}
 
-    importances = model.feature_importances_
-    n_text = 128
-    n_kw   = 5
-    n_img  = 8
-
+    importances = rf.feature_importances_  # 8-dim from image branch RF
     groups = {
-        "bert_text_embeddings": float(importances[:n_text].sum()),
-        "keyword_features":     float(importances[n_text:n_text+n_kw].sum()),
-        "image_cnn_features":   float(importances[n_text+n_kw:].sum()),
+        name: round(float(imp) * 100, 2)
+        for name, imp in zip(IMAGE_FEATURE_NAMES, importances)
     }
-    total = sum(groups.values())
-    groups = {k: round(v/total*100, 2) for k, v in groups.items()}
 
-    print("\n=== Feature Group Importance ===")
+    print("\n=== Image Branch Feature Importance (RandomForest) ===")
     for g, pct in groups.items():
         bar = "█" * int(pct / 2)
         print(f"  {g:<28} {pct:5.1f}%  {bar}")

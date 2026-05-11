@@ -2,3 +2,8 @@ node_modules/
 dist/
 .DS_Store
 *.local
+ML_SERVICE/models/classifier.pkl
+ML_SERVICE/models/*.pkl
+ML_SERVICE/data/
+ML_SERVICE/__pycache__/
+ML_SERVICE/api/__pycache__/
