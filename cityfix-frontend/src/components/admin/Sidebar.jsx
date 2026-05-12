@@ -9,7 +9,7 @@ const navItems = [
   { id: 'staff', icon: '🧑‍💼', label: 'Staff' },
   { id: 'map', icon: '📍', label: 'Map View' },
   { id: 'announcements', icon: '📣', label: 'Announcements' },
-  { id: 'settings', icon: '⚙️', label: 'Settings' },
+  { id: 'profile', icon: '👤', label: 'Profile' },
 ];
 
 const Sidebar = ({ activeNav, setActiveNav }) => {

@@ -23,13 +23,28 @@ const notificationSchema = new mongoose.Schema(
       type: String,
       enum: [
         "complaint_created",
+        "complaint_registered",
         "assigned",
         "status_changed",
         "resolved",
         "overdue",
-        "remark_added"
+        "remark_added",
+        "user_registered",
+        "staff_approval_request",
+        "staff_approved",
+        "staff_rejected",
+        "work_started",
+        "work_completed",
+        "work_verified",
+        "work_rejected",
+        "suspicious_gps",
+        "update_rejected"
       ],
       required: true
+    },
+    meta: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {}
     },
     isRead: {
       type: Boolean,

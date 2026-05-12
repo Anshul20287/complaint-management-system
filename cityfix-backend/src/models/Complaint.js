@@ -21,7 +21,7 @@ const complaintSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["OPEN", "IN_PROGRESS", "RESOLVED"],
+      enum: ["OPEN", "ASSIGNED", "IN_PROGRESS", "WORK_COMPLETED", "VERIFIED", "RESOLVED", "REJECTED"],
       default: "OPEN"
     },
     address: {
@@ -54,7 +54,7 @@ const complaintSchema = new mongoose.Schema(
       {
         status: {
           type: String,
-          enum: ["OPEN", "IN_PROGRESS", "RESOLVED"],
+          enum: ["OPEN", "ASSIGNED", "IN_PROGRESS", "WORK_COMPLETED", "VERIFIED", "RESOLVED", "REJECTED"],
           required: true
         },
         updatedBy: {
@@ -62,7 +62,15 @@ const complaintSchema = new mongoose.Schema(
           ref: "User",
           required: true
         },
-        updatedAt: {
+        role: {
+          type: String,
+          enum: ["citizen", "staff", "admin"],
+          required: true
+        },
+        remark: {
+          type: String
+        },
+        timestamp: {
           type: Date,
           default: Date.now
         }
@@ -85,6 +93,68 @@ const complaintSchema = new mongoose.Schema(
         }
       }
     ],
+    workProofImages: [
+      {
+        url: {
+          type: String,
+          required: true
+        },
+        type: {
+          type: String,
+          enum: ["before", "after"],
+          required: true
+        },
+        uploadedAt: {
+          type: Date,
+          default: Date.now
+        }
+      }
+    ],
+    citizenVerification: {
+      verified: {
+        type: Boolean,
+        default: false
+      },
+      verifiedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"
+      },
+      verifiedAt: {
+        type: Date
+      },
+      feedback: {
+        type: String
+      },
+      rejected: {
+        type: Boolean,
+        default: false
+      }
+    },
+    geoVerification: {
+      latitude: {
+        type: Number
+      },
+      longitude: {
+        type: Number
+      },
+      verified: {
+        type: Boolean,
+        default: false
+      },
+      distance: {
+        type: Number
+      },
+      flagged: {
+        type: Boolean,
+        default: false
+      }
+    },
+    completedAt: {
+      type: Date
+    },
+    verifiedAt: {
+      type: Date
+    },
     resolvedAt: {
       type: Date
     }

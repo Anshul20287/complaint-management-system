@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from "../../context/AuthContext";
+import { registerUser } from "../../services/authService";
 
 // ─── Role options ────────────────────────────────────────────────────────────
 const ROLES = [
@@ -21,6 +22,46 @@ const ROLES = [
     icon:  '🛡️',
     title: 'Admin',
     desc:  'Manage the platform and all city issues.',
+  },
+];
+
+// ─── Category options with descriptions ────────────────────────────────────
+const CATEGORIES = [
+  {
+    value: 'Pothole/Road Damage',
+    label: 'Pothole/Road Damage',
+    icon: '🛣️',
+    desc: 'Repair damaged roads, potholes, cracks, and surface irregularities.',
+  },
+  {
+    value: 'Sanitation',
+    label: 'Sanitation',
+    icon: '🧹',
+    desc: 'Clean streets, manage waste collection, and maintain public hygiene.',
+  },
+  {
+    value: 'Electricity',
+    label: 'Electricity',
+    icon: '⚡',
+    desc: 'Fix street lights, electrical lines, and power supply issues.',
+  },
+  {
+    value: 'Water Problems',
+    label: 'Water Problems',
+    icon: '💧',
+    desc: 'Handle water supply issues, leaks, and drainage problems.',
+  },
+  {
+    value: 'Environmental factors',
+    label: 'Environmental factors',
+    icon: '🌳',
+    desc: 'Address pollution, tree maintenance, and environmental concerns.',
+  },
+  {
+    value: 'Other',
+    label: 'Other',
+    icon: '📋',
+    desc: 'Handle miscellaneous issues not covered by other categories.',
   },
 ];
 
@@ -71,6 +112,7 @@ export default function SignUp() {
     confirmPassword: '',
   });
   const [role,    setRole]    = useState('');
+  const [selectedCategories, setSelectedCategories] = useState([]);
   const [errors,  setErrors]  = useState({});
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -80,6 +122,18 @@ export default function SignUp() {
     const { name, value } = e.target;
     setFields((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: '' }));
+  }
+
+  // Category toggle handler
+  function handleCategoryToggle(category) {
+    setSelectedCategories((prev) => {
+      if (prev.includes(category)) {
+        return prev.filter((c) => c !== category);
+      } else {
+        return [...prev, category];
+      }
+    });
+    setErrors((prev) => ({ ...prev, categories: '' }));
   }
 
   // Validation
@@ -101,6 +155,8 @@ export default function SignUp() {
       errs.confirmPassword = 'Passwords do not match.';
     if (!role)
       errs.role = 'Please select a role to continue.';
+    if (role === 'staff' && selectedCategories.length === 0)
+      errs.categories = 'Please select at least one category for your work.';
     return errs;
   }
 
@@ -112,12 +168,29 @@ export default function SignUp() {
       setErrors(errs);
       return;
     }
-    setLoading(true);
-    // ↓ Replace this timeout with your real API call
-    await new Promise((r) => setTimeout(r, 1000));
-    login({ username: fields.username, role });
-    setLoading(false);
-    navigate(role === 'citizen' ? '/citizen' : '/admin');
+    try {
+      setLoading(true);
+
+      const res = await registerUser({
+        name: fields.fullName,
+        email: fields.email,
+        password: fields.password,
+        role,
+        assignedCategories: role === 'staff' ? selectedCategories : []
+      });
+
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+      login(res.data.user);
+
+      if (res.data.user.role === "admin") navigate("/admin");
+      else if (res.data.user.role === "staff") navigate("/staff");
+      else navigate("/citizen");
+    } catch (error) {
+      alert(error.response?.data?.message || "Signup failed");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -244,7 +317,7 @@ export default function SignUp() {
                     <button
                       key={value}
                       type="button"
-                      onClick={() => { setRole(value); setErrors((p) => ({ ...p, role: '' })); }}
+                      onClick={() => { setRole(value); setSelectedCategories([]); setErrors((p) => ({ ...p, role: '' })); }}
                       style={{
                         display: 'flex', flexDirection: 'column', alignItems: 'center',
                         textAlign: 'center', gap: 6, borderRadius: 14, padding: '14px 8px',
@@ -268,6 +341,70 @@ export default function SignUp() {
                 <p style={{ color: '#f87171', fontSize: '0.75rem' }}>{errors.role}</p>
               )}
             </div>
+
+            {/* ── Staff Categories Selector (visible only when staff is selected) ── */}
+            {role === 'staff' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <p style={{ fontSize: '0.75rem', letterSpacing: '0.05em', fontWeight: 500, color: '#6b7a99' }}>
+                  SELECT YOUR WORK DOMAINS *
+                </p>
+                <p style={{ fontSize: '0.7rem', color: '#7c8aa5', marginTop: -6 }}>
+                  Choose the categories you're qualified to handle. You'll receive complaints from these domains.
+                </p>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                  {CATEGORIES.map(({ value, label, icon, desc }) => {
+                    const isSelected = selectedCategories.includes(value);
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => handleCategoryToggle(value)}
+                        style={{
+                          display: 'flex', flexDirection: 'column', alignItems: 'flex-start',
+                          textAlign: 'left', gap: 4, borderRadius: 12, padding: '12px',
+                          border: `1.5px solid ${isSelected ? '#00f5d4' : 'rgba(255,255,255,0.07)'}`,
+                          background: isSelected ? 'rgba(0,245,212,0.12)' : 'rgba(255,255,255,0.01)',
+                          color: isSelected ? '#00f5d4' : '#6b7a99',
+                          cursor: 'pointer', transition: 'all 0.2s',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isSelected) {
+                            e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+                            e.currentTarget.style.borderColor = 'rgba(0,245,212,0.3)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isSelected) {
+                            e.currentTarget.style.background = 'rgba(255,255,255,0.01)';
+                            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)';
+                          }
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: '100%' }}>
+                          <span style={{ fontSize: '1rem' }}>{icon}</span>
+                          <span style={{ fontWeight: 600, fontSize: '0.85rem', flex: 1 }}>{label}</span>
+                          <div style={{
+                            width: 16, height: 16, borderRadius: 4,
+                            border: `2px solid ${isSelected ? '#00f5d4' : 'rgba(255,255,255,0.2)'}`,
+                            background: isSelected ? '#00f5d4' : 'transparent',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: '0.7rem', color: '#03060f'
+                          }}>
+                            {isSelected && '✓'}
+                          </div>
+                        </div>
+                        <p style={{ fontSize: '0.7rem', lineHeight: 1.3, color: 'rgba(255,255,255,0.6)' }}>
+                          {desc}
+                        </p>
+                      </button>
+                    );
+                  })}
+                </div>
+                {errors.categories && (
+                  <p style={{ color: '#f87171', fontSize: '0.75rem' }}>{errors.categories}</p>
+                )}
+              </div>
+            )}
 
             {/* Submit button */}
             <button

@@ -12,8 +12,22 @@ import authRoutes from "./routes/authRoutes.js";
 
 const app = express();
 
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "http://localhost:5173"
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL,
+  origin(origin, callback) {
+    const isLocalhost = typeof origin === "string" && /^http:\/\/localhost:\d+$/.test(origin);
+    if (!origin || allowedOrigins.includes(origin) || isLocalhost) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error("Not allowed by CORS"));
+  },
   credentials: true
 }));
 

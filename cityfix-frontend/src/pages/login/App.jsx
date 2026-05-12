@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { loginUser } from "../../services/authService";
 
 // ─── Role options ─────────────────────────────────────────────────────────────
 const ROLES = [
@@ -25,12 +26,14 @@ const inputStyle = {
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function Login() {
+  console.log("LOGIN COMPONENT LOADED");
   const navigate  = useNavigate();
   const { login } = useAuth();
 
-  const [fields,  setFields]  = useState({ username: '', password: '' });
+  const [fields, setFields] = useState({ email: '', password: '' });
   const [role,    setRole]    = useState('');
   const [errors,  setErrors]  = useState({});
+  const [loginError, setLoginError] = useState(null);
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -42,22 +45,51 @@ export default function Login() {
 
   function validate() {
     const errs = {};
-    if (!fields.username.trim()) errs.username = 'Username is required.';
+    if (!fields.email.trim()) errs.email = 'Email is required.';
     if (!fields.password)        errs.password = 'Password is required.';
-    if (!role)                   errs.role     = 'Please select a role to continue.';
     return errs;
   }
 
-  async function handleSubmit(e) {
-    e.preventDefault();
-    const errs = validate();
-    if (Object.keys(errs).length) { setErrors(errs); return; }
-    setLoading(true);
-    await new Promise((r) => setTimeout(r, 900)); // replace with real API call
-    login({ username: fields.username, role });
-    setLoading(false);
-    navigate(role === 'citizen' ? '/citizen' : '/admin');
+async function handleSubmit(e) {
+  e.preventDefault();
+
+  console.log("LOGIN BUTTON CLICKED");
+
+  const errs = validate();
+
+  if (Object.keys(errs).length) {
+    setErrors(errs);
+    return;
   }
+
+  try {
+    setLoading(true);
+    setLoginError(null);
+
+    const res = await loginUser({
+      email: fields.email,
+      password: fields.password
+    });
+
+    localStorage.setItem("token", res.data.token);
+    localStorage.setItem("user", JSON.stringify(res.data.user));
+
+    login(res.data.user);
+
+    const userRole = res.data.user.role;
+
+    if (userRole === "admin") navigate("/admin");
+    else if (userRole === "staff") navigate("/staff/domain-select");
+    else navigate("/citizen");
+
+  } catch (error) {
+    const message = error.response?.data?.message || "Login failed";
+    setLoginError(message);
+    console.error("LOGIN ERROR:", error);
+  } finally {
+    setLoading(false);
+  }
+}
 
   const activeRole = ROLES.find((r) => r.value === role);
 
@@ -93,12 +125,18 @@ export default function Login() {
             Sign In
           </h1>
 
+          {loginError && (
+            <div style={{ marginBottom: 16, padding: 14, borderRadius: 14, background: '#2b1120', border: '1px solid #c53030', color: '#feb2b2', fontSize: '0.95rem' }}>
+              {loginError}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} noValidate style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
 
             {/* ── Role selector (same card style as SignUp) ── */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               <p style={{ fontSize: '0.75rem', letterSpacing: '0.05em', fontWeight: 500, color: '#6b7a99' }}>
-                SELECT YOUR ROLE *
+                SELECT YOUR ROLE (OPTIONAL)
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
                 {ROLES.map(({ value, icon, label }) => {
@@ -134,18 +172,18 @@ export default function Login() {
             {/* Username */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
               <label style={{ fontSize: '0.75rem', letterSpacing: '0.05em', fontWeight: 500, color: '#6b7a99' }}>
-                USERNAME *
+                EMAIL *
               </label>
               <input
-                name="username"
-                value={fields.username}
+                name="email"
+                value={fields.email}
                 onChange={handleChange}
-                placeholder="Enter your username"
-                style={{ ...inputStyle, borderColor: errors.username ? '#f87171' : 'rgba(255,255,255,0.07)' }}
+                placeholder="Enter your email"
+                style={{ ...inputStyle, borderColor: errors.email ? '#f87171' : 'rgba(255,255,255,0.07)' }}
                 onFocus={(e) => (e.target.style.borderColor = 'rgba(0,245,212,0.4)')}
-                onBlur={(e)  => (e.target.style.borderColor = errors.username ? '#f87171' : 'rgba(255,255,255,0.07)')}
+                onBlur={(e)  => (e.target.style.borderColor = errors.email ? '#f87171' : 'rgba(255,255,255,0.07)')}
               />
-              {errors.username && <p style={{ color: '#f87171', fontSize: '0.75rem' }}>{errors.username}</p>}
+              {errors.email && <p style={{ color: '#f87171', fontSize: '0.75rem' }}>{errors.email}</p>}
             </div>
 
             {/* Password */}

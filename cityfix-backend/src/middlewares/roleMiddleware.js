@@ -7,6 +7,13 @@ export const authorizeRoles = (...roles) => {
       });
     }
 
+    if (req.user.role === "staff" && req.user.staffApprovalStatus !== "approved") {
+      return res.status(403).json({
+        success: false,
+        message: "Staff access is not approved yet"
+      });
+    }
+
     next();
   };
 };

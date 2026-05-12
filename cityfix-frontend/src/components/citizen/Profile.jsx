@@ -1,21 +1,42 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useAuth } from "../../context/AuthContext";
+import { getCitizenDashboard } from "../../services/dashboardService";
 
 const Profile = () => {
+  const { user } = useAuth();
+  const [stats, setStats] = useState({ myReports: 0, resolved: 0 });
   const [showEdit, setShowEdit] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const [user, setUser] = useState({
-    name: "Anshul Bansal",
-    email: "anshul@email.com",
-    phone: "+91 98765 43210",
-    city: "Mumbai",
+  const [form, setForm] = useState({
+    name: user?.name || "",
+    phone: user?.phone || "",
+    city: user?.address || "",
   });
 
-  const [form, setForm] = useState(user);
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await getCitizenDashboard();
+        setStats(res.data.stats || { myReports: 0, resolved: 0 });
+      } catch (err) {
+        console.error("Failed to fetch stats:", err);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   const handleSave = () => {
-    setUser(form);
+    // TODO: Implement profile update API
+    alert("Profile update not implemented yet");
     setShowEdit(false);
+  };
+
+  const handlePasswordChange = () => {
+    // TODO: Implement password change API
+    alert("Password change not implemented yet");
+    setShowPassword(false);
   };
 
   return (
@@ -29,9 +50,9 @@ const Profile = () => {
         </div>
 
         <div>
-          <h3 className="text-lg font-semibold text-[#e6f1ff]">{user.name}</h3>
-          <p className="text-sm text-[#7c8aa5]">{user.email}</p>
-          <p className="mt-1 text-sm text-[#7c8aa5]">Citizen ID: CTZ-20481</p>
+          <h3 className="text-lg font-semibold text-[#e6f1ff]">{user?.name || "Citizen"}</h3>
+          <p className="text-sm text-[#7c8aa5]">{user?.email || ""}</p>
+          <p className="mt-1 text-sm text-[#7c8aa5]">Citizen ID: {user?._id?.slice(-6) || "N/A"}</p>
         </div>
       </div>
 
@@ -39,22 +60,22 @@ const Profile = () => {
       <div className="grid gap-5 md:grid-cols-2">
         <div className="rounded-xl border border-cyan-400/10 bg-[#0b1628]/70 p-5">
           <p className="mb-1 text-sm text-[#7c8aa5]">Phone</p>
-          <p className="text-[#e6f1ff]">{user.phone}</p>
+          <p className="text-[#e6f1ff]">{user?.phone || "Not provided"}</p>
         </div>
 
         <div className="rounded-xl border border-cyan-400/10 bg-[#0b1628]/70 p-5">
           <p className="mb-1 text-sm text-[#7c8aa5]">City</p>
-          <p className="text-[#e6f1ff]">{user.city}</p>
+          <p className="text-[#e6f1ff]">{user?.address || "Not provided"}</p>
         </div>
 
         <div className="rounded-xl border border-cyan-400/10 bg-[#0b1628]/70 p-5">
           <p className="mb-1 text-sm text-[#7c8aa5]">Total Reports</p>
-          <p className="text-[#e6f1ff]">8</p>
+          <p className="text-[#e6f1ff]">{stats.myReports}</p>
         </div>
 
         <div className="rounded-xl border border-cyan-400/10 bg-[#0b1628]/70 p-5">
           <p className="mb-1 text-sm text-[#7c8aa5]">Resolved Reports</p>
-          <p className="text-[#19e6d2]">5</p>
+          <p className="text-[#19e6d2]">{stats.resolved}</p>
         </div>
       </div>
 
@@ -156,10 +177,7 @@ const Profile = () => {
               </button>
 
               <button
-                onClick={() => {
-                  alert("Password changed successfully!");
-                  setShowPassword(false);
-                }}
+                onClick={handlePasswordChange}
                 className="px-4 py-2 bg-[#19e6d2] rounded-lg text-black font-semibold"
               >
                 Update

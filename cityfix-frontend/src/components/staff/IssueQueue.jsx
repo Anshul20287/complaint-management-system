@@ -1,30 +1,47 @@
-import React, { useState } from "react";
-import { issueQueue } from "../../data/staffData";
+﻿import React, { useEffect, useState } from "react";
 
 const statusStyles = {
-  'Open':        'bg-red-500/15 text-red-400',
-  'In Progress': 'bg-amber-400/10 text-amber-300',
-  'Resolved':    'bg-emerald-500/10 text-emerald-400',
+  Open: "bg-red-500/15 text-red-400",
+  "In Progress": "bg-amber-400/10 text-amber-300",
+  Resolved: "bg-emerald-500/10 text-emerald-400"
 };
 
 const priorityStyles = {
-  'High':   'bg-red-500/15 text-red-400 font-semibold',
-  'Medium': 'bg-amber-400/10 text-amber-300',
-  'Low':    'bg-emerald-500/10 text-emerald-400',
+  High: "bg-red-500/15 text-red-400 font-semibold",
+  Medium: "bg-amber-400/10 text-amber-300",
+  Low: "bg-emerald-500/10 text-emerald-400"
 };
 
-const statusOptions = ['Open', 'In Progress', 'Resolved'];
+const statusOptions = ["Open", "In Progress", "Resolved"];
 
-const IssueQueue = () => {
-  const [issues, setIssues] = useState(issueQueue);
-  const [modal, setModal] = useState(null); // { index, status }
+const formatStatus = (status) => {
+  if (status === "OPEN") return "Open";
+  if (status === "IN_PROGRESS") return "In Progress";
+  if (status === "RESOLVED") return "Resolved";
+  return status;
+};
+
+const formatPriority = (priority) => {
+  if (priority === "HIGH") return "High";
+  if (priority === "MEDIUM") return "Medium";
+  if (priority === "LOW") return "Low";
+  return priority;
+};
+
+const IssueQueue = ({ issues: initialIssues = [] }) => {
+  const [issues, setIssues] = useState(initialIssues);
+  const [modal, setModal] = useState(null);
+
+  useEffect(() => {
+    setIssues(initialIssues);
+  }, [initialIssues]);
 
   const openModal = (index) => {
-    setModal({ index, status: issues[index].status });
+    setModal({ index, status: formatStatus(issues[index]?.status) });
   };
 
   const saveStatus = () => {
-    setIssues(prev =>
+    setIssues((prev) =>
       prev.map((issue, i) =>
         i === modal.index ? { ...issue, status: modal.status } : issue
       )
@@ -42,55 +59,76 @@ const IssueQueue = () => {
           <thead>
             <tr className="border-b border-cyan-400/10">
               {["#ID", "Type · Location", "Priority", "Status", ""].map((h) => (
-                <th key={h} className="pb-3 text-left text-xs font-medium text-[#7c8aa5] tracking-wide">
+                <th
+                  key={h}
+                  className="pb-3 text-left text-xs font-medium text-[#7c8aa5] tracking-wide"
+                >
                   {h}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {issues.map((issue, i) => (
-              <tr key={issue.id} className={i < issues.length - 1 ? "border-b border-cyan-400/10" : ""}>
-                <td className="py-3 text-sm font-medium text-[#19e6d2] cursor-pointer hover:underline transition-colors">
-                  {issue.id}
-                </td>
-                <td className="py-3 text-sm">
-                  <span className="text-[#e6f1ff]">{issue.type}</span>
-                  <span className="text-[#7c8aa5]"> · {issue.location}</span>
-                </td>
-                <td className="py-3">
-                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${priorityStyles[issue.priority]}`}>
-                    {issue.priority}
-                  </span>
-                </td>
-                <td className="py-3">
-                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${statusStyles[issue.status]}`}>
-                    {issue.status}
-                  </span>
-                </td>
-                <td className="py-3">
-                  <button
-                    onClick={() => openModal(i)}
-                    className="rounded-lg border border-cyan-400/10 bg-cyan-400/5 px-3 py-1.5 text-xs text-[#7c8aa5] transition-all hover:border-cyan-400/30 hover:bg-cyan-400/10 hover:text-[#e6f1ff] cursor-pointer font-medium"
-                  >
-                    {issue.status === "Resolved" ? "View" : "Update"}
-                  </button>
+            {issues.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="py-6 text-center text-sm text-[#7c8aa5]">
+                  No assigned issues available.
                 </td>
               </tr>
-            ))}
+            ) : (
+              issues.map((issue, i) => {
+                const status = formatStatus(issue.status);
+                const priority = formatPriority(issue.priority);
+                return (
+                  <tr
+                    key={issue._id || issue.id || i}
+                    className={i < issues.length - 1 ? "border-b border-cyan-400/10" : ""}
+                  >
+                    <td className="py-3 text-sm font-medium text-[#19e6d2] cursor-pointer hover:underline transition-colors">
+                      {issue._id ? issue._id.slice(-6) : issue.id}
+                    </td>
+                    <td className="py-3 text-sm">
+                      <span className="text-[#e6f1ff]">{issue.category || issue.type || "Unknown"}</span>
+                      <span className="text-[#7c8aa5]"> · {issue.address || issue.location || "No location"}</span>
+                    </td>
+                    <td className="py-3">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${priorityStyles[priority]}`}
+                      >
+                        {priority}
+                      </span>
+                    </td>
+                    <td className="py-3">
+                      <span
+                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${statusStyles[status]}`}
+                      >
+                        {status}
+                      </span>
+                    </td>
+                    <td className="py-3">
+                      <button
+                        onClick={() => openModal(i)}
+                        className="rounded-lg border border-cyan-400/10 bg-cyan-400/5 px-3 py-1.5 text-xs text-[#7c8aa5] transition-all hover:border-cyan-400/30 hover:bg-cyan-400/10 hover:text-[#e6f1ff] cursor-pointer font-medium"
+                      >
+                        {status === "Resolved" ? "View" : "Update"}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* Update Status Modal */}
-      {modal && (
+      {modal && issues[modal.index] && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="w-[340px] rounded-2xl border border-cyan-400/10 bg-[#09111f]/95 p-6 shadow-2xl backdrop-blur-lg">
             <h3 className="mb-2 text-base font-semibold text-[#e6f1ff]">
-              Update Issue {issues[modal.index].id}
+              Update Issue {issues[modal.index]._id?.slice(-6) || issues[modal.index].id}
             </h3>
             <p className="mb-5 text-sm text-[#7c8aa5]">
-              {issues[modal.index].type} · {issues[modal.index].location}
+              {issues[modal.index].category || issues[modal.index].type || "Issue"} · {issues[modal.index].address || issues[modal.index].location || "Location unknown"}
             </p>
 
             <label className="mb-3 block text-xs font-medium uppercase tracking-wider text-[#7c8aa5]">

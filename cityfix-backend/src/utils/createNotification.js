@@ -14,7 +14,8 @@ const createNotification = async (data) => {
     complaint: data.complaint,
     title: data.title,
     message: data.message,
-    type: data.type
+    type: data.type,
+    meta: data.meta || {}
   });
 };
 

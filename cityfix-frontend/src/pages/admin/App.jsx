@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Sidebar from '../../components/admin/Sidebar';
 import StatsBar from '../../components/admin/StatsBar';
 import StaffOverview from '../../components/admin/StaffOverview';
@@ -11,9 +11,40 @@ import Staff from '../../components/admin/Staff';
 import MapView from '../../components/admin/MapView';
 import Announcements from '../../components/admin/Announcements';
 import Settings from '../../components/admin/Settings';
+import { getAdminDashboard } from "../../services/dashboardService";
 
 const Dashboard = () => {
   const [activeNav, setActiveNav] = useState('dashboard');
+
+  // CHANGED: state added for backend dashboard data
+  const [dashboardData, setDashboardData] = useState(null);
+
+  // CHANGED: loading and error states added
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // CHANGED: API call added to fetch admin dashboard data
+  useEffect(() => {
+    const fetchAdminDashboard = async () => {
+      try {
+        const res = await getAdminDashboard();
+
+        console.log("ADMIN DASHBOARD DATA:", res.data);
+
+        setDashboardData(res.data);
+      } catch (err) {
+        console.log("ADMIN DASHBOARD ERROR:", err);
+
+        setError(
+          err.response?.data?.message || "Failed to load admin dashboard"
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAdminDashboard();
+  }, []);
 
   const renderContent = () => {
     switch (activeNav) {
@@ -30,16 +61,31 @@ const Dashboard = () => {
               </span>
             </div>
 
-            <StatsBar />
+            {/* CHANGED: loading state added */}
+            {loading && (
+              <div className="mb-6 rounded-xl border border-cyan-400/10 bg-[#06111f] p-4 text-sm text-[#7c8aa5]">
+                Loading dashboard data...
+              </div>
+            )}
+
+            {/* CHANGED: error state added */}
+            {error && (
+              <div className="mb-6 rounded-xl border border-red-400/20 bg-red-500/10 p-4 text-sm text-red-300">
+                {error}
+              </div>
+            )}
+
+            {/* CHANGED: dashboardData passed to child components */}
+            <StatsBar stats={dashboardData?.stats} />
 
             <div className="grid grid-cols-2 gap-6 mb-6">
-              <RecentIssues />
-              <CategoryChart />
+              <RecentIssues issues={dashboardData?.recentComplaints || []} />
+              <CategoryChart categoryStats={dashboardData?.categoryStats || []} />
             </div>
 
             <div className="grid grid-cols-2 gap-6">
-              <StaffOverview />
-              <Alerts />
+              <StaffOverview staffList={dashboardData?.staffOverview || []} />
+              <Alerts alerts={dashboardData?.alerts || []} />
             </div>
           </>
         );
@@ -48,10 +94,10 @@ const Dashboard = () => {
         return <AllIssues />;
 
       case 'citizens':
-        return <Citizens />;
+        return <Citizens citizens={dashboardData?.citizensOverview || []} />;
 
       case 'staff':
-        return <Staff />;
+        return <Staff staff={dashboardData?.staffDirectory || []} />;
 
       case 'map':
         return <MapView />;
@@ -59,7 +105,7 @@ const Dashboard = () => {
       case 'announcements':
         return <Announcements />;
 
-      case 'settings':
+      case 'profile':
         return <Settings />;
 
       default:

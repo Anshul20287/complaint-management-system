@@ -6,7 +6,7 @@ const getStatusCounts = async (filter = {}) => {
   const open = await Complaint.countDocuments({ ...filter, status: "OPEN" });
   const inProgress = await Complaint.countDocuments({ ...filter, status: "IN_PROGRESS" });
   const resolved = await Complaint.countDocuments({ ...filter, status: "RESOLVED" });
-  const urgent = await Complaint.countDocuments({ ...filter, priority: "High" });
+  const urgent = await Complaint.countDocuments({ ...filter, priority: "HIGH" });
 
   return { total, open, inProgress, resolved, urgent };
 };
@@ -36,6 +36,115 @@ export const getAdminDashboard = async (req, res) => {
       }
     ]);
 
+    const staffUsers = await User.find({ role: "staff" })
+      .select("name email address");
+
+    const staffOverview = await Promise.all(
+      staffUsers.map(async (staff) => {
+        const [openAssigned, inProgressAssigned, resolvedAssigned] = await Promise.all([
+          Complaint.countDocuments({ assignedTo: staff._id, status: "OPEN" }),
+          Complaint.countDocuments({ assignedTo: staff._id, status: "IN_PROGRESS" }),
+          Complaint.countDocuments({ assignedTo: staff._id, status: "RESOLVED" })
+        ]);
+
+        return {
+          id: staff._id,
+          name: staff.name,
+          zone: staff.address || "Not specified",
+          open: openAssigned + inProgressAssigned,
+          resolved: resolvedAssigned
+        };
+      })
+    );
+
+    const [highPriorityOpen, unassignedOpen, staleUnresolved] = await Promise.all([
+      Complaint.countDocuments({ priority: "HIGH", status: { $ne: "RESOLVED" } }),
+      Complaint.countDocuments({ assignedTo: null, status: { $ne: "RESOLVED" } }),
+      Complaint.countDocuments({
+        status: { $ne: "RESOLVED" },
+        createdAt: { $lte: new Date(Date.now() - 72 * 60 * 60 * 1000) }
+      })
+    ]);
+
+    const alerts = [];
+    if (highPriorityOpen > 0) {
+      alerts.push({
+        type: "warn",
+        title: "High-priority unresolved complaints",
+        time: "Live",
+        meta: `${highPriorityOpen} high-priority complaints need attention`
+      });
+    }
+    if (unassignedOpen > 0) {
+      alerts.push({
+        type: "warn",
+        title: "Unassigned unresolved complaints",
+        time: "Live",
+        meta: `${unassignedOpen} complaints are not assigned to staff`
+      });
+    }
+    if (staleUnresolved > 0) {
+      alerts.push({
+        type: "info",
+        title: "Potential SLA breach risk",
+        time: "Live",
+        meta: `${staleUnresolved} complaints are older than 72 hours`
+      });
+    }
+
+    const [citizenUsers, staffDirectoryUsers, complaintsByCitizen, unresolvedByStaff] = await Promise.all([
+      User.find({ role: "citizen" })
+        .select("name email createdAt")
+        .sort({ createdAt: -1 }),
+      User.find({ role: "staff" })
+        .select("name address createdAt")
+        .sort({ createdAt: -1 }),
+      Complaint.aggregate([
+        {
+          $group: {
+            _id: "$createdBy",
+            complaints: { $sum: 1 }
+          }
+        }
+      ]),
+      Complaint.aggregate([
+        {
+          $match: {
+            assignedTo: { $ne: null },
+            status: { $ne: "RESOLVED" }
+          }
+        },
+        {
+          $group: {
+            _id: "$assignedTo",
+            active: { $sum: 1 }
+          }
+        }
+      ])
+    ]);
+
+    const complaintCountByCitizenId = new Map(
+      complaintsByCitizen.map((item) => [String(item._id), item.complaints])
+    );
+
+    const unresolvedCountByStaffId = new Map(
+      unresolvedByStaff.map((item) => [String(item._id), item.active])
+    );
+
+    const citizensOverview = citizenUsers.map((citizen) => ({
+      id: citizen._id,
+      name: citizen.name,
+      email: citizen.email,
+      complaints: complaintCountByCitizenId.get(String(citizen._id)) || 0
+    }));
+
+    const staffDirectory = staffDirectoryUsers.map((staff) => ({
+      id: staff._id,
+      name: staff.name,
+      zone: staff.address || "Not specified",
+      active: unresolvedCountByStaffId.get(String(staff._id)) || 0
+    }));
+
     res.status(200).json({
       success: true,
       stats: {
@@ -47,7 +156,11 @@ export const getAdminDashboard = async (req, res) => {
         totalStaff
       },
       recentComplaints,
-      categoryStats
+      categoryStats,
+      staffOverview,
+      alerts,
+      citizensOverview,
+      staffDirectory
     });
 
   } catch (error) {
@@ -69,6 +182,17 @@ export const getStaffDashboard = async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(10);
 
+    const categoryBreakdown = await Complaint.aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: "$category",
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { count: -1 } }
+    ]);
+
     res.status(200).json({
       success: true,
       stats: {
@@ -76,6 +200,7 @@ export const getStaffDashboard = async (req, res) => {
         resolved: stats.resolved,
         pending: stats.open + stats.inProgress
       },
+      categoryBreakdown,
       assignedIssues
     });
 

@@ -5,10 +5,17 @@ import {
   getMyComplaints,
   getAllComplaints,
   getSingleComplaint,
-  updateComplaintStatus,
   assignComplaint,
+  startWork,
+  completeWork,
+  verifyCitizen,
+  rejectUpdate,
+  getComplaintTimeline,
+  getStaffByCategory,
+  getStaffAssignedComplaints,
   addComplaintRemark,
-  getComplaintHeatmap
+  getComplaintHeatmap,
+  updateComplaint
 } from "../controllers/complaintController.js";
 
 import { protect } from "../middlewares/authMiddleware.js";
@@ -32,11 +39,38 @@ router.get(
   getMyComplaints
 );
 
+router.put(
+  "/:id",
+  protect,
+  authorizeRoles("citizen"),
+  upload.single("image"),
+  updateComplaint
+);
+
+router.get(
+  "/assigned/list",
+  protect,
+  authorizeRoles("staff"),
+  getStaffAssignedComplaints
+);
+
 router.get(
   "/heatmap",
   protect,
   authorizeRoles("citizen","admin", "staff"),
   getComplaintHeatmap
+);
+
+router.get(
+  "/public-heatmap",
+  getComplaintHeatmap
+);
+
+router.get(
+  "/staff/by-category/:category",
+  protect,
+  authorizeRoles("admin"),
+  getStaffByCategory
 );
 
 router.get(
@@ -53,13 +87,6 @@ router.get(
 );
 
 router.put(
-  "/:id/status",
-  protect,
-  authorizeRoles("admin", "staff"),
-  updateComplaintStatus
-);
-
-router.put(
   "/:id/assign",
   protect,
   authorizeRoles("admin"),
@@ -67,9 +94,44 @@ router.put(
 );
 
 router.put(
+  "/:id/start-work",
+  protect,
+  authorizeRoles("staff"),
+  startWork
+);
+
+router.put(
+  "/:id/complete-work",
+  protect,
+  authorizeRoles("staff"),
+  upload.array("proofImages", 10),
+  completeWork
+);
+
+router.put(
+  "/:id/verify",
+  protect,
+  authorizeRoles("citizen", "admin"),
+  verifyCitizen
+);
+
+router.put(
+  "/:id/reject-update",
+  protect,
+  authorizeRoles("admin"),
+  rejectUpdate
+);
+
+router.get(
+  "/:id/timeline",
+  protect,
+  getComplaintTimeline
+);
+
+router.put(
   "/:id/remarks",
   protect,
-  authorizeRoles("admin", "staff"),
+  authorizeRoles("admin", "staff", "citizen"),
   addComplaintRemark
 );
 
